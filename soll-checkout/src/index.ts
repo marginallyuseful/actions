@@ -50,12 +50,7 @@ async function run(): Promise<void> {
       }
 
       // Fetch base ref with enough depth to also reach the merge base
-      await exec.exec("git", [
-        "fetch",
-        `--depth=${behind + 1}`,
-        "origin",
-        baseSha,
-      ]);
+      await exec.exec("git", ["fetch", `--depth=${behind + 1}`, "origin", baseSha]);
 
       core.setOutput("base-ref", baseSha);
     } else {

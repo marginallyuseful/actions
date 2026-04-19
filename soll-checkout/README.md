@@ -26,13 +26,13 @@ steps:
 
 ## Inputs
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `ref` | no | -- | Branch, tag, or SHA to check out |
-| `token` | no | `github.token` | PAT for checkout |
+| Input   | Required | Default        | Description                      |
+| ------- | -------- | -------------- | -------------------------------- |
+| `ref`   | no       | --             | Branch, tag, or SHA to check out |
+| `token` | no       | `github.token` | PAT for checkout                 |
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
+| Output     | Description                                  |
+| ---------- | -------------------------------------------- |
 | `base-ref` | Resolved base SHA for `soll affected --base` |
