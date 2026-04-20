@@ -1,3 +1,8 @@
+// @soll-generated
+// @soll-source .github/actions/soll-checkout/src/index.ts
+// @soll-command cd .github/actions && bun run build
+// @soll-hash 7658104f1e70f628
+// @end-soll-generated
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
