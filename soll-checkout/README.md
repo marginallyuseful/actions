@@ -44,11 +44,14 @@ steps:
 
 ## What it does
 
-1. Checks out the repository via `actions/checkout@v6`, forwarding all inputs
-2. When `soll` is enabled (default), fetches the minimum additional history soll needs:
-   - **Pull requests:** fetches the PR base commit, then deepens until the base is reachable from HEAD
-   - **Pushes to default branch:** fetches the parent commit (for HEAD~1)
-3. Outputs `base-ref` -- the SHA to pass to `soll affected --base`
+1. When `soll` is enabled (default), calls the GitHub compare API *before* checkout to determine the exact fetch depth needed
+2. Checks out the repository via `actions/checkout@v6` with the computed depth, forwarding all other inputs
+3. Fetches the minimum additional history soll needs:
+   - **Pull requests:** fetches the PR base commit (the checkout already has enough HEAD history)
+   - **Pushes to default branch:** checkout depth 2 already includes the parent — no extra fetch needed
+4. Outputs `base-ref` -- the SHA to pass to `soll affected --base`
+
+This avoids a separate `git fetch --deepen` round-trip after checkout.
 
 All [actions/checkout inputs](https://github.com/actions/checkout#usage) are accepted as pass-through.
 

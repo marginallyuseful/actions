@@ -1,3 +1,7 @@
+// @soll-generated
+// @soll-source .github/actions/soll-checkout/src/index.ts
+// @soll-hash 64e3dd7c887fc369
+// @end-soll-generated
 import { createRequire } from "node:module";
 var __create = Object.create;
 var __getProtoOf = Object.getPrototypeOf;
@@ -22697,26 +22701,7 @@ var require_github = __commonJS((exports) => {
 
 // soll-checkout/src/index.ts
 var core = __toESM(require_core(), 1);
-var exec = __toESM(require_exec(), 1);
 var github = __toESM(require_github(), 1);
-async function git(...args) {
-  let stdout = "";
-  await exec.exec("git", args, {
-    listeners: { stdout: (data) => stdout += data.toString() },
-    silent: true
-  });
-  return stdout.trim();
-}
-async function getCompareDistances(token, base, head) {
-  const octokit = github.getOctokit(token);
-  const { owner, repo } = github.context.repo;
-  const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
-    owner,
-    repo,
-    basehead: `${base}...${head}`
-  });
-  return { ahead: data.ahead_by, behind: data.behind_by };
-}
 async function run() {
   try {
     const token = core.getInput("token", { required: true });
@@ -22727,17 +22712,23 @@ async function run() {
         throw new Error("pull_request event missing base.sha");
       }
       const headSha = github.context.sha;
-      const { ahead, behind } = await getCompareDistances(token, baseSha, headSha);
+      const octokit = github.getOctokit(token);
+      const { owner, repo } = github.context.repo;
+      const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
+        owner,
+        repo,
+        basehead: `${baseSha}...${headSha}`
+      });
+      const ahead = data.ahead_by;
+      const behind = data.behind_by;
       core.info(`Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`);
-      if (ahead > 0) {
-        await exec.exec("git", ["fetch", "--no-tags", `--deepen=${ahead}`, "origin", headSha]);
-      }
-      await exec.exec("git", ["fetch", "--no-tags", `--depth=${behind + 1}`, "origin", baseSha]);
-      core.setOutput("base-ref", baseSha);
+      core.setOutput("fetch-depth", String(ahead + 1));
+      core.setOutput("base-sha", baseSha);
+      core.setOutput("behind", String(behind));
     } else {
-      await exec.exec("git", ["fetch", "--no-tags", "--deepen=1", "origin", "HEAD"]);
-      const parentSha = await git("rev-parse", "HEAD~1");
-      core.setOutput("base-ref", parentSha);
+      core.setOutput("fetch-depth", "2");
+      core.setOutput("base-sha", "");
+      core.setOutput("behind", "0");
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error));
@@ -22745,5 +22736,5 @@ async function run() {
 }
 run();
 
-//# debugId=6D86C72CB285F18D64756E2164756E21
+//# debugId=AB61034CD4AAA3B964756E2164756E21
 //# sourceMappingURL=index.js.map

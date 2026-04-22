@@ -101,6 +101,17 @@ outputs:
 runs:
   using: composite
   steps:
+    # 1. Pre-checkout: determine the exact fetch-depth via GitHub compare API.
+    #    Runs the node action *before* checkout so we can pass the computed
+    #    depth to actions/checkout, eliminating a separate deepen round-trip.
+    - if: inputs.soll == 'true'
+      id: soll-plan
+      shell: bash
+      env:
+        INPUT_TOKEN: ${{ inputs.token }}
+      run: node "${{ github.action_path }}/dist/index.js"
+
+    # 2. Checkout with computed depth (soll) or user-specified depth (plain).
     - if: inputs.checkout == 'true'
       uses: actions/checkout@v6
       with:
@@ -117,7 +128,7 @@ runs:
         filter: ${{ inputs.filter }}
         sparse-checkout: ${{ inputs.sparse-checkout }}
         sparse-checkout-cone-mode: ${{ inputs.sparse-checkout-cone-mode }}
-        fetch-depth: ${{ inputs.fetch-depth }}
+        fetch-depth: ${{ steps.soll-plan.outputs.fetch-depth || inputs.fetch-depth }}
         fetch-tags: ${{ inputs.fetch-tags }}
         show-progress: ${{ inputs.show-progress }}
         lfs: ${{ inputs.lfs }}
@@ -125,10 +136,15 @@ runs:
         set-safe-directory: ${{ inputs.set-safe-directory }}
         github-server-url: ${{ inputs.github-server-url }}
 
+    # 3. Post-checkout: fetch the PR base ref and set the base-ref output.
     - if: inputs.soll == 'true'
       id: soll-deepen
       shell: bash
       working-directory: ${{ inputs.path || '.' }}
-      env:
-        INPUT_TOKEN: ${{ inputs.token }}
-      run: node "${{ github.action_path }}/dist/index.js"
+      run: |
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          git fetch --no-tags "--depth=$(( ${{ steps.soll-plan.outputs.behind }} + 1 ))" origin "${{ steps.soll-plan.outputs.base-sha }}"
+          echo "base-ref=${{ steps.soll-plan.outputs.base-sha }}" >> "$GITHUB_OUTPUT"
+        else
+          echo "base-ref=$(git rev-parse HEAD~1)" >> "$GITHUB_OUTPUT"
+        fi

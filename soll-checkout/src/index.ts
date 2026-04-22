@@ -1,33 +1,16 @@
 import * as core from "@actions/core";
-import * as exec from "@actions/exec";
 import * as github from "@actions/github";
 
-/** Run a git command and return stdout, trimmed. */
-async function git(...args: string[]): Promise<string> {
-  let stdout = "";
-  await exec.exec("git", args, {
-    listeners: { stdout: (data) => (stdout += data.toString()) },
-    silent: true,
-  });
-  return stdout.trim();
-}
-
-/** Use the GitHub compare API to get the ahead/behind counts from the merge base. */
-async function getCompareDistances(
-  token: string,
-  base: string,
-  head: string,
-): Promise<{ ahead: number; behind: number }> {
-  const octokit = github.getOctokit(token);
-  const { owner, repo } = github.context.repo;
-  const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
-    owner,
-    repo,
-    basehead: `${base}...${head}`,
-  });
-  return { ahead: data.ahead_by, behind: data.behind_by };
-}
-
+/**
+ * Pre-checkout planner for soll.
+ *
+ * Runs *before* actions/checkout to determine the exact fetch-depth needed,
+ * avoiding a separate deepen round-trip after checkout. Outputs:
+ *
+ * - `fetch-depth` — pass to actions/checkout
+ * - `base-sha`    — the PR base or parent SHA
+ * - `behind`      — how many commits the base is behind the merge base
+ */
 async function run(): Promise<void> {
   try {
     const token = core.getInput("token", { required: true });
@@ -41,23 +24,28 @@ async function run(): Promise<void> {
       }
 
       const headSha = github.context.sha;
-      const { ahead, behind } = await getCompareDistances(token, baseSha, headSha);
-      core.info(`Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`);
+      const octokit = github.getOctokit(token);
+      const { owner, repo } = github.context.repo;
+      const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
+        owner,
+        repo,
+        basehead: `${baseSha}...${headSha}`,
+      });
 
-      // Deepen HEAD's history to reach the merge base
-      if (ahead > 0) {
-        await exec.exec("git", ["fetch", "--no-tags", `--deepen=${ahead}`, "origin", headSha]);
-      }
+      const ahead = data.ahead_by;
+      const behind = data.behind_by;
+      core.info(
+        `Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`,
+      );
 
-      // Fetch base ref with enough depth to also reach the merge base
-      await exec.exec("git", ["fetch", "--no-tags", `--depth=${behind + 1}`, "origin", baseSha]);
-
-      core.setOutput("base-ref", baseSha);
+      core.setOutput("fetch-depth", String(ahead + 1));
+      core.setOutput("base-sha", baseSha);
+      core.setOutput("behind", String(behind));
     } else {
-      // Push to main/default branch: deepen by 1 to get the parent commit.
-      await exec.exec("git", ["fetch", "--no-tags", "--deepen=1", "origin", "HEAD"]);
-      const parentSha = await git("rev-parse", "HEAD~1");
-      core.setOutput("base-ref", parentSha);
+      // Push to main/default branch: depth 2 gives us HEAD + parent.
+      core.setOutput("fetch-depth", "2");
+      core.setOutput("base-sha", "");
+      core.setOutput("behind", "0");
     }
   } catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error));
