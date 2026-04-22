@@ -44,7 +44,7 @@ steps:
 
 ## What it does
 
-1. When `soll` is enabled (default), calls the GitHub compare API *before* checkout to determine the exact fetch depth needed
+1. When `soll` is enabled (default), calls the GitHub compare API _before_ checkout to determine the exact fetch depth needed
 2. Checks out the repository via `actions/checkout@v6` with the computed depth, forwarding all other inputs
 3. Fetches the minimum additional history soll needs:
    - **Pull requests:** fetches the PR base commit (the checkout already has enough HEAD history)
@@ -57,20 +57,20 @@ All [actions/checkout inputs](https://github.com/actions/checkout#usage) are acc
 
 ## Inputs
 
-| Input | Required | Default | Description |
-| ----- | -------- | ------- | ----------- |
-| `checkout` | no | `"true"` | Run actions/checkout. Set to `"false"` to skip (bring your own checkout). |
-| `soll` | no | `"true"` | Enable soll deepening. Set to `"false"` for a plain checkout. |
-| `repository` | no | `github.repository` | Repository name with owner |
-| `ref` | no | -- | Branch, tag, or SHA to check out |
-| `token` | no | `github.token` | PAT for checkout and API calls |
-| `fetch-depth` | no | `1` | Number of commits to fetch (0 = all) |
-| `path` | no | -- | Relative path under $GITHUB_WORKSPACE |
-| `sparse-checkout` | no | -- | Sparse checkout patterns |
-| ... | | | All other `actions/checkout@v6` inputs are accepted |
+| Input             | Required | Default             | Description                                                               |
+| ----------------- | -------- | ------------------- | ------------------------------------------------------------------------- |
+| `checkout`        | no       | `"true"`            | Run actions/checkout. Set to `"false"` to skip (bring your own checkout). |
+| `soll`            | no       | `"true"`            | Enable soll deepening. Set to `"false"` for a plain checkout.             |
+| `repository`      | no       | `github.repository` | Repository name with owner                                                |
+| `ref`             | no       | --                  | Branch, tag, or SHA to check out                                          |
+| `token`           | no       | `github.token`      | PAT for checkout and API calls                                            |
+| `fetch-depth`     | no       | `1`                 | Number of commits to fetch (0 = all)                                      |
+| `path`            | no       | --                  | Relative path under $GITHUB_WORKSPACE                                     |
+| `sparse-checkout` | no       | --                  | Sparse checkout patterns                                                  |
+| ...               |          |                     | All other `actions/checkout@v6` inputs are accepted                       |
 
 ## Outputs
 
-| Output | Description |
-| ------ | ----------- |
+| Output     | Description                                                                |
+| ---------- | -------------------------------------------------------------------------- |
 | `base-ref` | Resolved base SHA for `soll affected --base` (empty when soll is disabled) |

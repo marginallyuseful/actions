@@ -34,9 +34,7 @@ async function run(): Promise<void> {
 
       const ahead = data.ahead_by;
       const behind = data.behind_by;
-      core.info(
-        `Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`,
-      );
+      core.info(`Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`);
 
       core.setOutput("fetch-depth", String(ahead + 1));
       core.setOutput("base-sha", baseSha);
