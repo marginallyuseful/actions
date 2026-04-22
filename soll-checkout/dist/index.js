@@ -22730,12 +22730,12 @@ async function run() {
       const { ahead, behind } = await getCompareDistances(token, baseSha, headSha);
       core.info(`Compare: HEAD is ${ahead} ahead, ${behind} behind merge base`);
       if (ahead > 0) {
-        await exec.exec("git", ["fetch", `--deepen=${ahead}`, "origin"]);
+        await exec.exec("git", ["fetch", "--no-tags", `--deepen=${ahead}`, "origin", headSha]);
       }
-      await exec.exec("git", ["fetch", `--depth=${behind + 1}`, "origin", baseSha]);
+      await exec.exec("git", ["fetch", "--no-tags", `--depth=${behind + 1}`, "origin", baseSha]);
       core.setOutput("base-ref", baseSha);
     } else {
-      await exec.exec("git", ["fetch", "--deepen=1", "origin"]);
+      await exec.exec("git", ["fetch", "--no-tags", "--deepen=1", "origin", "HEAD"]);
       const parentSha = await git("rev-parse", "HEAD~1");
       core.setOutput("base-ref", parentSha);
     }
@@ -22745,5 +22745,5 @@ async function run() {
 }
 run();
 
-//# debugId=75C785C4DB42742D64756E2164756E21
+//# debugId=6D86C72CB285F18D64756E2164756E21
 //# sourceMappingURL=index.js.map

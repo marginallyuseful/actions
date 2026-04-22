@@ -46,16 +46,16 @@ async function run(): Promise<void> {
 
       // Deepen HEAD's history to reach the merge base
       if (ahead > 0) {
-        await exec.exec("git", ["fetch", `--deepen=${ahead}`, "origin"]);
+        await exec.exec("git", ["fetch", "--no-tags", `--deepen=${ahead}`, "origin", headSha]);
       }
 
       // Fetch base ref with enough depth to also reach the merge base
-      await exec.exec("git", ["fetch", `--depth=${behind + 1}`, "origin", baseSha]);
+      await exec.exec("git", ["fetch", "--no-tags", `--depth=${behind + 1}`, "origin", baseSha]);
 
       core.setOutput("base-ref", baseSha);
     } else {
       // Push to main/default branch: deepen by 1 to get the parent commit.
-      await exec.exec("git", ["fetch", "--deepen=1", "origin"]);
+      await exec.exec("git", ["fetch", "--no-tags", "--deepen=1", "origin", "HEAD"]);
       const parentSha = await git("rev-parse", "HEAD~1");
       core.setOutput("base-ref", parentSha);
     }
